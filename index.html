@@ -45,9 +45,9 @@
     let stdRates = [];
     let deathCounts = [];
 
-    // ⭐ 自動換行：每行最多 7 個字（你可改成 6 或 8）
+    // ⭐ 自動換行：每行 8 個字
     function splitLabelToLines(label, maxLen = 8) {
-      const chars = [...label]; // 正確切中文字
+      const chars = [...label];
       const lines = [];
       for (let i = 0; i < chars.length; i += maxLen) {
         lines.push(chars.slice(i, i + maxLen).join(""));
@@ -62,31 +62,26 @@
         const cleaned = text.replace(/^\uFEFF/, "");
         const lines = cleaned.trim().split(/\r?\n/).filter(l => l.trim() !== "");
 
-        // 第 1 行：類別名稱
         const header = lines[0].split(",");
         const rawLabels = header.slice(1);
 
-        // ⭐ 預處理成多行標籤
         labels = rawLabels.map(l => splitLabelToLines(l));
 
-        // 第 2 行：標準死亡率
         const rowStd = lines[1].split(",").slice(1);
         stdRates = rowStd.map(v => Number(v));
 
-        // 第 3 行：死亡人數
         const rowDeath = lines[2].split(",").slice(1);
         deathCounts = rowDeath.map(v => Number(v));
 
-        // ⭐ 建立雷達圖（保留你的設定）
         new Chart(ctx, {
           type: "radar",
           data: {
-            labels: labels,   // ← 已自動變多行
+            labels: labels,
             datasets: [{
               label: "標準死亡率",
               data: stdRates,
               fill: true,
-              backgroundColor: "rgba(29,108,48,0.3)",   // 深綠色（保留）
+              backgroundColor: "rgba(29,108,48,0.3)",
               borderColor: "rgba(29,108,48,1)",
               pointBackgroundColor: "rgba(29,108,48,1)",
               pointBorderColor: "#fff",
@@ -97,16 +92,28 @@
           options: {
             responsive: true,
             maintainAspectRatio: false,
+
+            layout: {
+              padding: { right: 20, bottom: 10 }   /* ⭐ 右下角要給空間放圖例 */
+            },
+
             plugins: {
               title: {
                 display: true,
                 text: "2024年自殺方法別標準死亡率雷達圖",
                 font: { size: 22 }
               },
+
               legend: {
                 display: true,
-                labels: { font: { size: 16 } }
+                position: "right",   /* ⭐ 右側 */
+                align: "end",        /* ⭐ 靠下（右下角效果） */
+                labels: {
+                  font: { size: 16 },
+                  padding: 10
+                }
               },
+
               tooltip: {
                 callbacks: {
                   label: function (context) {
@@ -119,6 +126,7 @@
                 }
               }
             },
+
             scales: {
               r: {
                 beginAtZero: true,
@@ -127,8 +135,8 @@
                   stepSize: 1
                 },
                 pointLabels: {
-                  font: { size: 14 },   // ← 保留你設定的字體大小
-                  padding: 8           // ← 增加一點距離，圖更大更美
+                  font: { size: 14 },
+                  padding: 8
                 },
                 grid: {
                   color: "rgba(0,0,0,0.1)"
