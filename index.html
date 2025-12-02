@@ -25,6 +25,28 @@
       max-width: 900px;
       height: 90vh;
       max-height: 650px;
+      position: relative; /* ⭐ for legend */
+    }
+
+    /* ⭐ 自訂圖例：右下角 + 原本樣式 */
+    .legendCustom {
+      position: absolute;
+      right: 10px;
+      bottom: 10px;
+      font-size: 16px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      background: none;    /* ❗ 無底色 */
+      border: none;        /* ❗ 無外框 */
+      padding: 0;
+    }
+    .legendBox {
+      width: 16px;
+      height: 16px;
+      background-color: rgba(29,108,48,0.3);  /* ✔ 深綠色填色方塊 */
+      border-radius: 3px;
+      border: 3px solid rgba(29,108,48,1);   /* ⭐ 同色包邊 */
     }
   </style>
 </head>
@@ -32,6 +54,13 @@
 <body>
   <div class="wrapper">
     <div id="chartContainer">
+
+      <!-- ⭐ 自訂圖例（右下角，不影響圖置中） -->
+      <div class="legendCustom">
+        <div class="legendBox"></div>
+        <span>標準死亡率</span>
+      </div>
+
       <canvas id="radarChart"></canvas>
     </div>
   </div>
@@ -45,7 +74,7 @@
     let stdRates = [];
     let deathCounts = [];
 
-    // ⭐ 自動換行：每行 8 個字
+    // ⭐ 自動換行（每行 8 字）
     function splitLabelToLines(label, maxLen = 8) {
       const chars = [...label];
       const lines = [];
@@ -66,12 +95,8 @@
         const rawLabels = header.slice(1);
 
         labels = rawLabels.map(l => splitLabelToLines(l));
-
-        const rowStd = lines[1].split(",").slice(1);
-        stdRates = rowStd.map(v => Number(v));
-
-        const rowDeath = lines[2].split(",").slice(1);
-        deathCounts = rowDeath.map(v => Number(v));
+        stdRates = lines[1].split(",").slice(1).map(Number);
+        deathCounts = lines[2].split(",").slice(1).map(Number);
 
         new Chart(ctx, {
           type: "radar",
@@ -93,31 +118,18 @@
             responsive: true,
             maintainAspectRatio: false,
 
-            layout: {
-              padding: { right: 20, bottom: 10 }   /* ⭐ 右下角要給空間放圖例 */
-            },
-
             plugins: {
               title: {
                 display: true,
                 text: "2024年自殺方法別標準死亡率雷達圖",
                 font: { size: 22 }
               },
-
-              legend: {
-                display: true,
-                position: "right",   /* ⭐ 右側 */
-                align: "end",        /* ⭐ 靠下（右下角效果） */
-                labels: {
-                  font: { size: 16 },
-                  padding: 10
-                }
-              },
+              legend: { display: false }, /* ⭐ 關閉內建 legend */
 
               tooltip: {
                 callbacks: {
-                  label: function (context) {
-                    const i = context.dataIndex;
+                  label: function (ctx) {
+                    const i = ctx.dataIndex;
                     return [
                       `標準死亡率：${stdRates[i]}`,
                       `死亡人數：${deathCounts[i]} 人`
@@ -149,9 +161,7 @@
           }
         });
       })
-      .catch(err => {
-        console.error("讀取 CSV 發生錯誤：", err);
-      });
+      .catch(err => console.error("讀取 CSV 發生錯誤：", err));
   </script>
 </body>
 
