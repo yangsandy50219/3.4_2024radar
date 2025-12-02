@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+
+<head>
+  <meta charset="UTF-8" />
+  <title>2024年自殺方法別標準死亡率雷達圖</title>
+  <style>
+    body {
+      margin: 0;
+      padding: 0;
+      font-family: "Microsoft JhengHei", system-ui, sans-serif;
+      background-color: #ffffff;
+    }
+
+    .wrapper {
+      width: 100%;
+      height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+
+    #chartContainer {
+      width: 90%;
+      max-width: 900px;
+      height: 90vh;
+      max-height: 650px;
+    }
+  </style>
+</head>
+
+<body>
+  <div class="wrapper">
+    <div id="chartContainer">
+      <canvas id="radarChart"></canvas>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script>
+    const ctx = document.getElementById("radarChart").getContext("2d");
+
+    // 先準備要塞進圖裡的變數
+    let labels = [];
+    let stdRates = [];
+    let deathCounts = [];
+
+    // 讀取你那個 CSV 檔（檔名一定要跟 repo 裡完全一樣）
+    fetch("3.4 2024自殺方法別標準死亡率.csv")
+      .then(res => res.text())
+      .then(text => {
+        // 處理 BOM + 切行
+        const cleaned = text.replace(/^\uFEFF/, "");
+        const lines = cleaned.trim().split(/\r?\n/).filter(l => l.trim() !== "");
+
+        // 第 1 行：類別, 以固體..., 以氣體..., ...
+        const header = lines[0].split(",");
+        labels = header.slice(1);  // 去掉「類別」
+
+        // 第 2 行：標準死亡率
+        const rowStd = lines[1].split(",").slice(1);
+        stdRates = rowStd.map(v => Number(v));
+
+        // 第 3 行：死亡人數
+        const rowDeath = lines[2].split(",").slice(1);
+        deathCounts = rowDeath.map(v => Number(v));
+
+        // 建立雷達圖
+        new Chart(ctx, {
+          type: "radar",
+          data: {
+            labels: labels,
+            datasets: [{
+              label: "標準死亡率",
+              data: stdRates,
+              fill: true,
+              backgroundColor: "rgba(94,143,208,0.3)",
+              borderColor: "rgba(94,143,208,1)",
+              pointBackgroundColor: "rgba(94,143,208,1)",
+              pointBorderColor: "#fff",
+              pointRadius: 4,
+              pointHoverRadius: 6
+            }]
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+              title: {
+                display: true,
+                text: "2024年自殺方法別標準死亡率雷達圖",
+                font: { size: 20 }
+              },
+              legend: {
+                display: true,
+                labels: { font: { size: 14 } }
+              },
+              tooltip: {
+                callbacks: {
+                  // 懸停時顯示：標準死亡率 + 死亡人數
+                  label: function (context) {
+                    const i = context.dataIndex;
+                    const std = stdRates[i];
+                    const deaths = deathCounts[i];
+                    return [
+                      `標準死亡率：${std}`,
+                      `死亡人數：${deaths} 人`
+                    ];
+                  }
+                }
+              }
+            },
+            // 雷達圖的軸設定
+            scales: {
+              r: {
+                beginAtZero: true,
+                suggestedMax: 4,          // 你的最大值大約 3.7，抓到 4 比較好看
+                ticks: {
+                  stepSize: 1             // 每 1 一格（0,1,2,3,4）
+                },
+                pointLabels: {
+                  font: { size: 12 }      // 各軸標籤文字大小
+                },
+                grid: {
+                  color: "rgba(0,0,0,0.1)"
+                },
+                angleLines: {
+                  color: "rgba(0,0,0,0.2)"
+                }
+              }
+            }
+          }
+        });
+      })
+      .catch(err => {
+        console.error("讀取 CSV 發生錯誤：", err);
+      });
+  </script>
+</body>
+
+</html>
