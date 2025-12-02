@@ -38,24 +38,36 @@
 
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <script>
+
     const ctx = document.getElementById("radarChart").getContext("2d");
 
-    // 先準備要塞進圖裡的變數
     let labels = [];
     let stdRates = [];
     let deathCounts = [];
 
-    // 讀取你那個 CSV 檔（檔名一定要跟 repo 裡完全一樣）
+    // ⭐ 自動換行：每行最多 7 個字（你可改成 6 或 8）
+    function splitLabelToLines(label, maxLen = 7) {
+      const chars = [...label]; // 正確切中文字
+      const lines = [];
+      for (let i = 0; i < chars.length; i += maxLen) {
+        lines.push(chars.slice(i, i + maxLen).join(""));
+      }
+      return lines;
+    }
+
     fetch("3.4 2024自殺方法別標準死亡率.csv")
       .then(res => res.text())
       .then(text => {
-        // 處理 BOM + 切行
+
         const cleaned = text.replace(/^\uFEFF/, "");
         const lines = cleaned.trim().split(/\r?\n/).filter(l => l.trim() !== "");
 
-        // 第 1 行：類別, 以固體..., 以氣體..., ...
+        // 第 1 行：類別名稱
         const header = lines[0].split(",");
-        labels = header.slice(1);  // 去掉「類別」
+        const rawLabels = header.slice(1);
+
+        // ⭐ 預處理成多行標籤
+        labels = rawLabels.map(l => splitLabelToLines(l));
 
         // 第 2 行：標準死亡率
         const rowStd = lines[1].split(",").slice(1);
@@ -65,16 +77,16 @@
         const rowDeath = lines[2].split(",").slice(1);
         deathCounts = rowDeath.map(v => Number(v));
 
-        // 建立雷達圖
+        // ⭐ 建立雷達圖（保留你的設定）
         new Chart(ctx, {
           type: "radar",
           data: {
-            labels: labels,
+            labels: labels,   // ← 已自動變多行
             datasets: [{
               label: "標準死亡率",
               data: stdRates,
               fill: true,
-              backgroundColor: "rgba(29,108,48,0.3)",
+              backgroundColor: "rgba(29,108,48,0.3)",   // 深綠色（保留）
               borderColor: "rgba(29,108,48,1)",
               pointBackgroundColor: "rgba(29,108,48,1)",
               pointBorderColor: "#fff",
@@ -97,29 +109,26 @@
               },
               tooltip: {
                 callbacks: {
-                  // 懸停時顯示：標準死亡率 + 死亡人數
                   label: function (context) {
                     const i = context.dataIndex;
-                    const std = stdRates[i];
-                    const deaths = deathCounts[i];
                     return [
-                      `標準死亡率：${std}`,
-                      `死亡人數：${deaths} 人`
+                      `標準死亡率：${stdRates[i]}`,
+                      `死亡人數：${deathCounts[i]} 人`
                     ];
                   }
                 }
               }
             },
-            // 雷達圖的軸設定
             scales: {
               r: {
                 beginAtZero: true,
-                suggestedMax: 4,          // 你的最大值大約 3.7，抓到 4 比較好看
+                suggestedMax: 4,
                 ticks: {
-                  stepSize: 1             // 每 1 一格（0,1,2,3,4）
+                  stepSize: 1
                 },
                 pointLabels: {
-                  font: { size: 14 }      // 各軸標籤文字大小
+                  font: { size: 14 },   // ← 保留你設定的字體大小
+                  padding: 8           // ← 增加一點距離，圖更大更美
                 },
                 grid: {
                   color: "rgba(0,0,0,0.1)"
